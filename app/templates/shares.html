@@ -99,7 +99,7 @@ function copyText(text) {
 function toggleShare(shareId) {
   if (!confirm('确定要切换此分享链接的状态吗？')) return;
   
-  fetch(`/admin/shares/${shareId}/toggle`, {
+  fetch(`admin/shares/${shareId}/toggle`, {
     method: 'POST'
   })
   .then(res => res.json())
@@ -118,7 +118,7 @@ function toggleShare(shareId) {
 function deleteShare(shareId) {
   if (!confirm('确定要删除此分享链接吗？此操作不可恢复！')) return;
   
-  fetch(`/admin/shares/${shareId}/delete`, {
+  fetch(`admin/shares/${shareId}/delete`, {
     method: 'POST'
   })
   .then(res => res.json())
