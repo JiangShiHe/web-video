@@ -1,0 +1,153 @@
+/* 视频播放页面样式 */
+.video-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.video-title {
+  margin: 0;
+  font-size: 20px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#video-player {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 70vh;
+}
+
+.speed-controls {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.speed-label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.speed-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.speed-btn {
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 50px;
+}
+
+.speed-btn:active {
+  transform: scale(0.95);
+}
+
+.speed-btn.active {
+  background: #2196f3;
+  color: #fff;
+  border-color: #2196f3;
+  font-weight: 500;
+}
+
+.video-info {
+  margin-top: 12px;
+  padding: 10px;
+  background: #e3f2fd;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1976d2;
+}
+
+.private-badge {
+  padding: 8px 12px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-btn {
+  padding: 8px 16px;
+  background: #2196f3;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  display: inline-block;
+  transition: background 0.2s;
+}
+
+.edit-btn:active {
+  background: #1976d2;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .video-title {
+    font-size: 18px;
+  }
+
+  #video-player {
+    border-radius: 0;
+    max-height: 50vh;
+  }
+
+  .video-container {
+    margin: 0 -12px;
+    border-radius: 0;
+  }
+
+  .speed-controls {
+    padding: 10px;
+  }
+
+  .speed-btn {
+    padding: 10px 12px;
+    font-size: 15px;
+    flex: 1;
+    min-width: 60px;
+  }
+
+  .video-info {
+    font-size: 12px;
+  }
+}
+
+/* 横屏模式优化 */
+@media (max-width: 768px) and (orientation: landscape) {
+  #video-player {
+    max-height: 90vh;
+  }
+
+  .speed-controls {
+    display: none;
+  }
+}

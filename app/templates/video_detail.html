@@ -1,69 +1,110 @@
 {% extends 'layout.html' %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/video.css') }}">
+{% endblock %}
+
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-  <h2 style="margin:0;">{{ video.title }}</h2>
+<div class="video-header">
+  <h2 class="video-title">{{ video.title }}</h2>
   {% if current_user.is_authenticated and current_user.is_admin %}
-  <div>
-    <a href="{{ url_for('video.edit', vid=video.id) }}" style="padding:6px 12px; background:#2196f3; color:#fff; text-decoration:none; border-radius:4px; font-size:14px;">编辑</a>
-  </div>
+  <a href="{{ url_for('video.edit', vid=video.id) }}" class="edit-btn">编辑</a>
   {% endif %}
 </div>
 
 {% if not video.is_public %}
-<div style="padding:8px 12px; background:#fff3cd; border:1px solid #ffc107; border-radius:4px; margin-bottom:12px; font-size:14px;">
-  🔒 私有视频
+<div class="private-badge">
+  <span>🔒</span>
+  <span>私有视频</span>
 </div>
 {% endif %}
 
-<video id="video-player" controls width="800" style="max-width:100%;" preload="auto" crossorigin="anonymous">
-  <source src="{{ url_for('video.stream', vid=video.id) }}" type="video/mp4">
-  您的浏览器不支持视频播放
-</video>
-
-<div style="margin-top:12px;">
-  <label style="font-size:14px; margin-right:8px;">播放速度：</label>
-  <button onclick="setSpeed(0.5)">0.5x</button>
-  <button onclick="setSpeed(0.75)">0.75x</button>
-  <button onclick="setSpeed(1)" style="font-weight:bold;">1x</button>
-  <button onclick="setSpeed(1.25)">1.25x</button>
-  <button onclick="setSpeed(1.5)">1.5x</button>
-  <button onclick="setSpeed(2)">2x</button>
-  <span id="speed-display" style="margin-left:12px; color:#666; font-size:14px;">当前: 1x</span>
+<div class="video-container">
+  <video 
+    id="video-player" 
+    controls 
+    preload="auto" 
+    playsinline
+    webkit-playsinline
+    x5-playsinline
+    crossorigin="anonymous">
+    <source src="{{ url_for('video.stream', vid=video.id) }}" type="video/mp4">
+    您的浏览器不支持视频播放
+  </video>
 </div>
 
-<p style="color:#666; font-size:14px; margin-top:8px;">
-  提示：视频会自动缓存到浏览器，网络差时可暂停等待缓冲
-</p>
+<div class="speed-controls">
+  <span class="speed-label">播放速度</span>
+  <div class="speed-buttons">
+    <button class="speed-btn" onclick="setSpeed(0.5)" data-speed="0.5">0.5x</button>
+    <button class="speed-btn" onclick="setSpeed(0.75)" data-speed="0.75">0.75x</button>
+    <button class="speed-btn active" onclick="setSpeed(1)" data-speed="1">1x</button>
+    <button class="speed-btn" onclick="setSpeed(1.25)" data-speed="1.25">1.25x</button>
+    <button class="speed-btn" onclick="setSpeed(1.5)" data-speed="1.5">1.5x</button>
+    <button class="speed-btn" onclick="setSpeed(2)" data-speed="2">2x</button>
+  </div>
+</div>
+
+<div class="video-info">
+  💡 提示：视频会自动缓存，网络差时可暂停等待缓冲
+</div>
 
 <script>
 const video = document.getElementById('video-player');
-const speedDisplay = document.getElementById('speed-display');
+const speedButtons = document.querySelectorAll('.speed-btn');
 
 function setSpeed(rate) {
   video.playbackRate = rate;
-  speedDisplay.textContent = '当前: ' + rate + 'x';
   
-  // 高亮当前速度按钮
-  document.querySelectorAll('button').forEach(btn => {
-    btn.style.fontWeight = 'normal';
-    btn.style.background = '';
+  // 更新按钮状态
+  speedButtons.forEach(btn => {
+    if (parseFloat(btn.dataset.speed) === rate) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
   });
-  event.target.style.fontWeight = 'bold';
-  event.target.style.background = '#e3f2fd';
+  
+  // 保存用户偏好
+  localStorage.setItem('videoPlaybackRate', rate);
 }
-
-// 记住用户选择的速度
-video.addEventListener('ratechange', function() {
-  localStorage.setItem('videoPlaybackRate', video.playbackRate);
-});
 
 // 恢复上次的播放速度
 window.addEventListener('load', function() {
   const savedRate = localStorage.getItem('videoPlaybackRate');
   if (savedRate) {
-    video.playbackRate = parseFloat(savedRate);
-    speedDisplay.textContent = '当前: ' + savedRate + 'x';
+    setSpeed(parseFloat(savedRate));
   }
 });
+
+// 记住播放位置
+const videoKey = 'video_{{ video.id }}_position';
+video.addEventListener('timeupdate', function() {
+  if (video.currentTime > 5) { // 超过5秒才保存
+    localStorage.setItem(videoKey, video.currentTime);
+  }
+});
+
+// 恢复播放位置
+window.addEventListener('load', function() {
+  const savedPosition = localStorage.getItem(videoKey);
+  if (savedPosition && savedPosition > 0) {
+    video.currentTime = parseFloat(savedPosition);
+  }
+});
+
+// 播放完成后清除位置
+video.addEventListener('ended', function() {
+  localStorage.removeItem(videoKey);
+});
+
+// 防止双击缩放（iOS）
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function(event) {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) {
+    event.preventDefault();
+  }
+  lastTouchEnd = now;
+}, false);
 </script>
 {% endblock %}

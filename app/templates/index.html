@@ -1,23 +1,40 @@
 {% extends 'layout.html' %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
 {% block content %}
-<h2>{% if current_user.is_authenticated and current_user.is_admin %}所有视频{% else %}公共视频{% endif %}</h2>
-<div class="grid">
+<h2 class="page-title">
+  {% if current_user.is_authenticated and current_user.is_admin %}所有视频{% else %}公共视频{% endif %}
+</h2>
+
+<div class="video-grid">
   {% for v in videos %}
-  <div class="card">
-    <h3 style="margin:0 0 8px 0; font-size: 16px;">
-      {{ v.title }}
+  <div class="video-card">
+    <div class="video-thumbnail">🎬</div>
+    <div class="video-content">
       {% if not v.is_public %}
-      <span style="font-size:12px; color:#ff9800;">🔒</span>
+      <div class="video-badge">
+        <span>🔒</span>
+        <span>私有</span>
+      </div>
       {% endif %}
-    </h3>
-    <a href="{{ url_for('video.detail', vid=v.id) }}">播放</a>
-    {% if current_user.is_authenticated and current_user.is_admin %}
-    <a href="{{ url_for('video.edit', vid=v.id) }}" style="margin-left:8px; color:#2196f3;">编辑</a>
-    {% endif %}
+      <h3 class="video-title">{{ v.title }}</h3>
+      <div class="video-actions">
+        <a href="{{ url_for('video.detail', vid=v.id) }}" class="video-link">播放</a>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for('video.edit', vid=v.id) }}" class="edit-link">编辑</a>
+        {% endif %}
+      </div>
+    </div>
   </div>
   {% endfor %}
-  {% if videos|length == 0 %}
-    <p>暂无视频</p>
-  {% endif %}
 </div>
+
+{% if videos|length == 0 %}
+<div class="empty-state">
+  <div class="empty-state-icon">📹</div>
+  <p>暂无视频</p>
+</div>
+{% endif %}
 {% endblock %}
