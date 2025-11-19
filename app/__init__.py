@@ -45,6 +45,7 @@ def create_app(config_name='default'):
     with app.app_context():
         db.create_all()
         # 如果没有管理员，创建默认管理员
+        from .models import User
         if User.query.filter_by(is_admin=True).count() == 0:
             default_admin = User(
                 username="admin",

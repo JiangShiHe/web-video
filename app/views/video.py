@@ -1,8 +1,10 @@
 import os
+import secrets
+from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, current_app, abort, send_file, jsonify
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from ..models import Video
+from ..models import Video, ShareToken
 from .. import db
 
 bp = Blueprint("video", __name__)
@@ -142,3 +144,103 @@ def delete(vid):
     db.session.delete(v)
     db.session.commit()
     return redirect(url_for("video.index"))
+
+# ============================================
+# 分享功能
+# ============================================
+
+@bp.route("/admin/videos/<int:vid>/share", methods=["POST"])
+@login_required
+def create_share(vid):
+    """生成分享链接"""
+    if not current_user.is_admin:
+        return jsonify({"success": False, "error": "权限不足"}), 403
+    
+    video = Video.query.get_or_404(vid)
+    
+    # 获取参数
+    expires_hours = request.json.get("expires_hours")  # 过期时间（小时），None表示永久
+    max_views = request.json.get("max_views")  # 最大访问次数，None表示无限制
+    
+    # 生成随机令牌
+    token = secrets.token_urlsafe(32)
+    
+    # 计算过期时间
+    expires_at = None
+    if expires_hours:
+        expires_at = datetime.utcnow() + timedelta(hours=int(expires_hours))
+    
+    # 创建分享令牌
+    share = ShareToken(
+        video_id=video.id,
+        token=token,
+        expires_at=expires_at,
+        max_views=max_views,
+        created_by=current_user.id
+    )
+    db.session.add(share)
+    db.session.commit()
+    
+    # 生成分享链接
+    share_url = url_for("video.share_view", token=token, _external=True)
+    
+    return jsonify({
+        "success": True,
+        "share_url": share_url,
+        "token": token,
+        "expires_at": expires_at.isoformat() if expires_at else None
+    })
+
+@bp.route("/share/<token>")
+def share_view(token):
+    """通过分享链接访问视频"""
+    share = ShareToken.query.filter_by(token=token).first_or_404()
+    
+    # 检查令牌是否有效
+    if not share.is_valid():
+        abort(403, "分享链接已失效")
+    
+    # 增加访问次数
+    share.increment_view()
+    
+    # 显示视频
+    video = share.video
+    return render_template("video_detail.html", video=video, is_shared=True)
+
+@bp.route("/admin/videos/<int:vid>/shares")
+@login_required
+def list_shares(vid):
+    """查看视频的所有分享链接"""
+    if not current_user.is_admin:
+        abort(403)
+    
+    video = Video.query.get_or_404(vid)
+    shares = ShareToken.query.filter_by(video_id=vid).order_by(ShareToken.created_at.desc()).all()
+    
+    return render_template("shares.html", video=video, shares=shares)
+
+@bp.route("/admin/shares/<int:share_id>/toggle", methods=["POST"])
+@login_required
+def toggle_share(share_id):
+    """启用/禁用分享链接"""
+    if not current_user.is_admin:
+        return jsonify({"success": False, "error": "权限不足"}), 403
+    
+    share = ShareToken.query.get_or_404(share_id)
+    share.is_active = not share.is_active
+    db.session.commit()
+    
+    return jsonify({"success": True, "is_active": share.is_active})
+
+@bp.route("/admin/shares/<int:share_id>/delete", methods=["POST"])
+@login_required
+def delete_share(share_id):
+    """删除分享链接"""
+    if not current_user.is_admin:
+        return jsonify({"success": False, "error": "权限不足"}), 403
+    
+    share = ShareToken.query.get_or_404(share_id)
+    db.session.delete(share)
+    db.session.commit()
+    
+    return jsonify({"success": True})

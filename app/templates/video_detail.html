@@ -7,7 +7,11 @@
 <div class="video-header">
   <h2 class="video-title">{{ video.title }}</h2>
   {% if current_user.is_authenticated and current_user.is_admin %}
-  <a href="{{ url_for('video.edit', vid=video.id) }}" class="edit-btn">编辑</a>
+  <div class="admin-actions">
+    <button onclick="showShareDialog()" class="share-btn">🔗 生成分享链接</button>
+    <a href="{{ url_for('video.list_shares', vid=video.id) }}" class="manage-btn">📋 管理分享</a>
+    <a href="{{ url_for('video.edit', vid=video.id) }}" class="edit-btn">✏️ 编辑</a>
+  </div>
   {% endif %}
 </div>
 
@@ -106,5 +110,249 @@ document.addEventListener('touchend', function(event) {
   }
   lastTouchEnd = now;
 }, false);
+
+{% if current_user.is_authenticated and current_user.is_admin %}
+// 分享对话框
+function showShareDialog() {
+  const dialog = document.createElement('div');
+  dialog.className = 'share-dialog-overlay';
+  dialog.innerHTML = `
+    <div class="share-dialog">
+      <div class="share-dialog-header">
+        <h3>生成分享链接</h3>
+        <button onclick="this.closest('.share-dialog-overlay').remove()" class="close-btn">×</button>
+      </div>
+      <div class="share-dialog-body">
+        <div class="form-group">
+          <label>有效期</label>
+          <select id="expiresHours" class="form-control">
+            <option value="">永久有效</option>
+            <option value="1">1小时</option>
+            <option value="24" selected>24小时</option>
+            <option value="168">7天</option>
+            <option value="720">30天</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>访问次数限制</label>
+          <select id="maxViews" class="form-control">
+            <option value="">无限制</option>
+            <option value="10">10次</option>
+            <option value="50">50次</option>
+            <option value="100">100次</option>
+          </select>
+        </div>
+        <button onclick="generateShare()" class="btn-primary">生成链接</button>
+      </div>
+      <div id="shareResult" class="share-result" style="display:none;">
+        <div class="success-message">✅ 分享链接已生成</div>
+        <div class="share-url-container">
+          <input type="text" id="shareUrl" readonly class="share-url-input">
+          <button onclick="copyShareUrl()" class="btn-copy">复制</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+}
+
+function generateShare() {
+  const expiresHours = document.getElementById('expiresHours').value;
+  const maxViews = document.getElementById('maxViews').value;
+  
+  fetch('{{ url_for("video.create_share", vid=video.id) }}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      expires_hours: expiresHours || null,
+      max_views: maxViews || null
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById('shareUrl').value = data.share_url;
+      document.getElementById('shareResult').style.display = 'block';
+    } else {
+      alert('生成失败: ' + data.error);
+    }
+  })
+  .catch(err => {
+    alert('生成失败: ' + err.message);
+  });
+}
+
+function copyShareUrl() {
+  const input = document.getElementById('shareUrl');
+  input.select();
+  document.execCommand('copy');
+  
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.textContent = '已复制!';
+  setTimeout(() => {
+    btn.textContent = originalText;
+  }, 2000);
+}
+{% endif %}
 </script>
+
+<style>
+.admin-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.share-btn, .manage-btn {
+  padding: 8px 16px;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+}
+
+.share-btn:hover, .manage-btn:hover {
+  background: #1976d2;
+}
+
+.manage-btn {
+  background: #4caf50;
+}
+
+.manage-btn:hover {
+  background: #388e3c;
+}
+
+.share-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.share-dialog {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.share-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.share-dialog-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #999;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.share-dialog-body {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.btn-primary:hover {
+  background: #1976d2;
+}
+
+.share-result {
+  padding: 20px;
+  border-top: 1px solid #eee;
+}
+
+.success-message {
+  color: #4caf50;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.share-url-container {
+  display: flex;
+  gap: 10px;
+}
+
+.share-url-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.btn-copy {
+  padding: 10px 20px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-copy:hover {
+  background: #388e3c;
+}
+</style>
 {% endblock %}
