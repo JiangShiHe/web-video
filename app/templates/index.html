@@ -1,0 +1,15 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>公共视频</h2>
+<div class="grid">
+  {% for v in videos %}
+  <div class="card">
+    <h3 style="margin:0 0 8px 0; font-size: 16px;">{{ v.title }}</h3>
+    <a href="{{ url_for('video.detail', vid=v.id) }}">播放</a>
+  </div>
+  {% endfor %}
+  {% if videos|length == 0 %}
+    <p>暂无公共视频</p>
+  {% endif %}
+</div>
+{% endblock %}

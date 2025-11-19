@@ -1,0 +1,55 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>{{ video.title }}</h2>
+<video id="video-player" controls width="800" style="max-width:100%;" preload="auto" crossorigin="anonymous">
+  <source src="{{ url_for('video.stream', vid=video.id) }}" type="video/mp4">
+  您的浏览器不支持视频播放
+</video>
+
+<div style="margin-top:12px;">
+  <label style="font-size:14px; margin-right:8px;">播放速度：</label>
+  <button onclick="setSpeed(0.5)">0.5x</button>
+  <button onclick="setSpeed(0.75)">0.75x</button>
+  <button onclick="setSpeed(1)" style="font-weight:bold;">1x</button>
+  <button onclick="setSpeed(1.25)">1.25x</button>
+  <button onclick="setSpeed(1.5)">1.5x</button>
+  <button onclick="setSpeed(2)">2x</button>
+  <span id="speed-display" style="margin-left:12px; color:#666; font-size:14px;">当前: 1x</span>
+</div>
+
+<p style="color:#666; font-size:14px; margin-top:8px;">
+  提示：视频会自动缓存到浏览器，网络差时可暂停等待缓冲
+</p>
+
+<script>
+const video = document.getElementById('video-player');
+const speedDisplay = document.getElementById('speed-display');
+
+function setSpeed(rate) {
+  video.playbackRate = rate;
+  speedDisplay.textContent = '当前: ' + rate + 'x';
+  
+  // 高亮当前速度按钮
+  document.querySelectorAll('button').forEach(btn => {
+    btn.style.fontWeight = 'normal';
+    btn.style.background = '';
+  });
+  event.target.style.fontWeight = 'bold';
+  event.target.style.background = '#e3f2fd';
+}
+
+// 记住用户选择的速度
+video.addEventListener('ratechange', function() {
+  localStorage.setItem('videoPlaybackRate', video.playbackRate);
+});
+
+// 恢复上次的播放速度
+window.addEventListener('load', function() {
+  const savedRate = localStorage.getItem('videoPlaybackRate');
+  if (savedRate) {
+    video.playbackRate = parseFloat(savedRate);
+    speedDisplay.textContent = '当前: ' + savedRate + 'x';
+  }
+});
+</script>
+{% endblock %}
