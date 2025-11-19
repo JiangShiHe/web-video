@@ -50,6 +50,10 @@ def create_app():
             print("✓ 数据库已初始化")
             print("✓ 默认管理员已创建: username=admin, password=admin123")
             print("⚠ 请登录后立即修改密码！")
+        
+        # 启动时清理孤立文件
+        from .views.video import cleanup_orphaned_files
+        cleanup_orphaned_files()
 
     @app.cli.command("init-db")
     def init_db_command():
@@ -71,5 +75,13 @@ def create_app():
             db.session.add(user)
             db.session.commit()
             click.echo("created")
+    
+    @app.cli.command("cleanup-files")
+    def cleanup_files_command():
+        """清理没有数据库记录的孤立文件"""
+        from .views.video import cleanup_orphaned_files
+        with app.app_context():
+            cleanup_orphaned_files()
+            click.echo("cleanup completed")
 
     return app

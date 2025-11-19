@@ -2,14 +2,14 @@
 {% block content %}
 <h2>上传视频</h2>
 {% if error %}<div class="error">{{ error }}</div>{% endif %}
-<form method="post" enctype="multipart/form-data">
+<form id="upload-form" method="post" enctype="multipart/form-data">
   <div style="margin-bottom:8px;">
     <label>标题</label>
-    <input type="text" name="title" required>
+    <input type="text" name="title" id="title" required style="width:100%; max-width:400px; padding:6px;">
   </div>
   <div style="margin-bottom:8px;">
     <label>视频文件</label>
-    <input type="file" name="file" accept="video/*" required>
+    <input type="file" name="file" id="file" accept="video/*" required>
   </div>
   <div style="margin-bottom:8px;">
     <label>
@@ -17,6 +17,92 @@
       公开
     </label>
   </div>
-  <button type="submit">提交</button>
+  <button type="submit" id="submit-btn" style="padding:8px 16px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer;">上传</button>
 </form>
+
+<div id="progress-container" style="display:none; margin-top:20px;">
+  <div style="margin-bottom:8px;">
+    <strong>上传中...</strong>
+    <span id="progress-text">0%</span>
+  </div>
+  <div style="width:100%; max-width:400px; height:20px; background:#e0e0e0; border-radius:10px; overflow:hidden;">
+    <div id="progress-bar" style="width:0%; height:100%; background:#4caf50; transition:width 0.3s;"></div>
+  </div>
+  <button id="cancel-btn" style="margin-top:8px; padding:6px 12px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer;">取消上传</button>
+</div>
+
+<script>
+const form = document.getElementById('upload-form');
+const progressContainer = document.getElementById('progress-container');
+const progressBar = document.getElementById('progress-bar');
+const progressText = document.getElementById('progress-text');
+const submitBtn = document.getElementById('submit-btn');
+const cancelBtn = document.getElementById('cancel-btn');
+let xhr = null;
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(form);
+  xhr = new XMLHttpRequest();
+  
+  // 上传进度
+  xhr.upload.addEventListener('progress', function(e) {
+    if (e.lengthComputable) {
+      const percent = Math.round((e.loaded / e.total) * 100);
+      progressBar.style.width = percent + '%';
+      progressText.textContent = percent + '%';
+    }
+  });
+  
+  // 上传完成
+  xhr.addEventListener('load', function() {
+    if (xhr.status === 200) {
+      const response = JSON.parse(xhr.responseText);
+      if (response.success) {
+        window.location.href = response.redirect;
+      } else {
+        alert(response.error || '上传失败');
+        resetForm();
+      }
+    } else {
+      alert('上传失败，请重试');
+      resetForm();
+    }
+  });
+  
+  // 上传错误
+  xhr.addEventListener('error', function() {
+    alert('上传失败，请检查网络连接');
+    resetForm();
+  });
+  
+  // 上传中止
+  xhr.addEventListener('abort', function() {
+    alert('上传已取消');
+    resetForm();
+  });
+  
+  // 显示进度条
+  form.style.display = 'none';
+  progressContainer.style.display = 'block';
+  
+  xhr.open('POST', form.action || window.location.href);
+  xhr.send(formData);
+});
+
+// 取消上传
+cancelBtn.addEventListener('click', function() {
+  if (xhr) {
+    xhr.abort();
+  }
+});
+
+function resetForm() {
+  form.style.display = 'block';
+  progressContainer.style.display = 'none';
+  progressBar.style.width = '0%';
+  progressText.textContent = '0%';
+}
+</script>
 {% endblock %}
