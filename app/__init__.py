@@ -8,7 +8,13 @@ from werkzeug.security import generate_password_hash
 db = SQLAlchemy()
 login_manager = LoginManager()
 
-def create_app():
+def create_app(config_name='default'):
+    """
+    创建Flask应用
+    
+    Args:
+        config_name: 配置名称（为了兼容网关，但app3不使用此参数）
+    """
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_mapping(
         SECRET_KEY=os.environ.get("SECRET_KEY", "dev-secret"),
