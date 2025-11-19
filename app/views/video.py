@@ -217,7 +217,7 @@ def list_shares(vid):
     video = Video.query.get_or_404(vid)
     shares = ShareToken.query.filter_by(video_id=vid).order_by(ShareToken.created_at.desc()).all()
     
-    return render_template("shares.html", video=video, shares=shares)
+    return render_template("shares.html", video=video, shares=shares, now=datetime.utcnow)
 
 @bp.route("/admin/shares/<int:share_id>/toggle", methods=["POST"])
 @login_required
