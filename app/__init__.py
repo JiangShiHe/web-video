@@ -35,6 +35,22 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(video_bp)
 
+    # 自动初始化数据库
+    with app.app_context():
+        db.create_all()
+        # 如果没有管理员，创建默认管理员
+        if User.query.filter_by(is_admin=True).count() == 0:
+            default_admin = User(
+                username="admin",
+                password_hash=generate_password_hash("admin123"),
+                is_admin=True
+            )
+            db.session.add(default_admin)
+            db.session.commit()
+            print("✓ 数据库已初始化")
+            print("✓ 默认管理员已创建: username=admin, password=admin123")
+            print("⚠ 请登录后立即修改密码！")
+
     @app.cli.command("init-db")
     def init_db_command():
         with app.app_context():
