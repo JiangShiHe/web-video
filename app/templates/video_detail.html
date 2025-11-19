@@ -31,7 +31,11 @@
     webkit-playsinline
     x5-playsinline
     crossorigin="anonymous">
+    {% if is_shared and share_token %}
+    <source src="{{ url_for('video.stream', vid=video.id, token=share_token) }}" type="video/mp4">
+    {% else %}
     <source src="{{ url_for('video.stream', vid=video.id) }}" type="video/mp4">
+    {% endif %}
     您的浏览器不支持视频播放
   </video>
 </div>

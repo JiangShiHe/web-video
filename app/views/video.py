@@ -59,10 +59,27 @@ def detail(vid):
 
 @bp.route("/stream/<int:vid>")
 def stream(vid):
+    """视频流，支持分享令牌访问"""
+    from flask import request
+    
     v = Video.query.get_or_404(vid)
+    
+    # 检查访问权限
     if not v.is_public:
-        if not current_user.is_authenticated or not current_user.is_admin:
-            abort(403)
+        # 检查是否通过有效的分享令牌访问
+        share_token = request.args.get('token')
+        has_share_access = False
+        
+        if share_token:
+            share = ShareToken.query.filter_by(token=share_token, video_id=vid).first()
+            if share and share.is_valid():
+                has_share_access = True
+        
+        # 如果没有分享访问权限，检查是否是管理员
+        if not has_share_access:
+            if not current_user.is_authenticated or not current_user.is_admin:
+                abort(403)
+    
     path = os.path.abspath(os.path.join(current_app.config["UPLOAD_FOLDER"], v.filename))
     if not os.path.isfile(path):
         abort(404)
@@ -203,9 +220,9 @@ def share_view(token):
     # 增加访问次数
     share.increment_view()
     
-    # 显示视频
+    # 显示视频，传递令牌用于视频流访问
     video = share.video
-    return render_template("video_detail.html", video=video, is_shared=True)
+    return render_template("video_detail.html", video=video, is_shared=True, share_token=token)
 
 @bp.route("/admin/videos/<int:vid>/shares")
 @login_required
