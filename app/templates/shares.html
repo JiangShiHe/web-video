@@ -99,7 +99,11 @@ function copyText(text) {
 function toggleShare(shareId) {
   if (!confirm('确定要切换此分享链接的状态吗？')) return;
   
-  fetch(`admin/shares/${shareId}/toggle`, {
+  // 使用绝对路径，从根路径开始
+  const currentPath = window.location.pathname;
+  const basePath = currentPath.split('/admin/')[0]; // 获取 /app3 部分
+  
+  fetch(`${basePath}/admin/shares/${shareId}/toggle`, {
     method: 'POST'
   })
   .then(res => res.json())
@@ -118,7 +122,11 @@ function toggleShare(shareId) {
 function deleteShare(shareId) {
   if (!confirm('确定要删除此分享链接吗？此操作不可恢复！')) return;
   
-  fetch(`admin/shares/${shareId}/delete`, {
+  // 使用绝对路径，从根路径开始
+  const currentPath = window.location.pathname;
+  const basePath = currentPath.split('/admin/')[0]; // 获取 /app3 部分
+  
+  fetch(`${basePath}/admin/shares/${shareId}/delete`, {
     method: 'POST'
   })
   .then(res => res.json())
