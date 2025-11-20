@@ -22,7 +22,12 @@ def create_app(config_name='default'):
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         UPLOAD_FOLDER=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "uploads"),
         MAX_CONTENT_LENGTH=2 * 1024 * 1024 * 1024,
+        PREFERRED_URL_SCHEME='https',  # 生成外部URL时使用https
     )
+    
+    # 配置反向代理支持（如果在Nginx等反向代理后面）
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     os.makedirs(os.path.abspath(app.config["UPLOAD_FOLDER"]), exist_ok=True)
 
